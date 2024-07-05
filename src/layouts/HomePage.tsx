@@ -5,25 +5,26 @@ import './homePage.scss'
 
 import { Drizzle, Hot, Mostly_Sunny, Partly_Cloudy, Partly_Cloudy_Night, Rain, Rainy, Strong_Wind, Sunny, Thunderstorm, Tornado, Windy } from './importImg'
 
-import { useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import api from '../apis/apiUtil';
 
 import { apiGetData } from '../apis/apiGetData';
 import { ChartWinds } from './ChartWinds';
 import ChartSunTime from './ChartSunTime';
-import { SearchProps } from 'antd/es/input';
 import { TypeWeather } from '../types/typeWeather';
 import nameCountry from '../constants/nameCountry';
+import { CalendarDays, Droplets, EyeOff, Gauge, Map } from 'lucide-react';
+import { apiGetDataForecast } from '../apis/apiGetDataForecast';
+import WeatherForecast from './WeatherForecast';
+import { TypeForecast } from '../types/typeWeatherForecast';
 
 export default function HomePage() {
     const style: React.CSSProperties = { padding: '10px' };
-    const { Search } = Input;
-    const [isLoading, setIsLoading] = useState(false)
-
     const [data, setData] = useState<TypeWeather>()
 
+    const [dataForecast, setDataForecast] = useState<TypeForecast>()
+
     const [country, setCountry] = useState('Vietnam')
-    const [searchCountry, setSearchCountry] = useState()
     const [tempsNow, setTempsNow] = useState<any>()
     const [tempsMin, setTempsMin] = useState<any>()
     const [tempsMax, setTempsMax] = useState<any>()
@@ -31,49 +32,53 @@ export default function HomePage() {
     const [timeNow, setTimeNow] = useState<any>()
     const [dateNow, setDateNow] = useState<any>()
     const [timezone, setTimeZone] = useState<any>()
-    const onSearch: SearchProps['onSearch'] = async (value, _e) => {
-        setIsLoading(true)
-        setCountry(value)
-    }
-    const handle = () => {
-        return nameCountry.map((name: any, index) => {
 
-        })
+
+    const handleOnClick = (values: any) => {
+        setCountry(values)
     }
-    handle()
     const items: MenuProps['items'] = [
         {
-            label: <a href="https://www.antgroup.com"></a>,
+            key: 1,
+            label: (
+                <div
+                    style={{
+                        height: '200px',
+                        overflow: 'hidden',
+                        overflowY: 'scroll',
+                    }}>{nameCountry.map((name: any) => {
+                        return <p className='nameCountry' onClick={() => { handleOnClick(name) }}>
+                            {name}
+                        </p>
+                    })}</div>
+            )
+        }
+    ]
 
-            key: '0',
-        },
-        {
-            label: <a href="https://www.aliyun.com">2nd menu item</a>,
-            key: '1',
-        },
-        {
-            type: 'divider',
-        },
-        {
-            label: '3rd menu item',
-            key: '3',
-        },
-    ];
     // callApi()
     const callApi = async () => {
         const result = await apiGetData(country)
-        console.log(result)
+
         if (result) {
-            setIsLoading(false)
+            // setIsLoading(false)
             setData(result)
         } else {
             alert("Can't found country")
         }
     }
-
     useEffect(() => {
         callApi()
+
     }, [country])
+
+    const apiForecast = async () => {
+        if (data) {
+            const { lon, lat } = data?.coord
+            const result = await apiGetDataForecast(lat, lon)
+            setDataForecast(result)
+        }
+    }
+
 
     // handle convertTemps
     const convertTemps = (Celsius: any) => {
@@ -84,7 +89,6 @@ export default function HomePage() {
 
     const handleRenderData = () => {
         if (data) {
-            console.log(data.timezone)
             // Get temps
             const tempsNow = data.main.feels_like
             const calcTemps = convertTemps(tempsNow)
@@ -113,12 +117,14 @@ export default function HomePage() {
 
     useEffect(() => {
         handleRenderData()
+        apiForecast()
+
     }, [data])
 
 
 
     return (
-        <div className='backgroundHome'>
+        <div className='backgroundHome' style={{ height: '100vh' }}>
             <div className='container mx-auto'>
                 <div className='information grid'>
                     <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
@@ -127,7 +133,7 @@ export default function HomePage() {
                                 {/* card-weather-top */}
                                 <div className='card-weather-top'>
                                     <img
-                                        src={Sunny}
+                                        src={Partly_Cloudy_Night}
                                         style={{
                                             width: '130px',
                                             height: '100px',
@@ -135,11 +141,11 @@ export default function HomePage() {
                                         }} className='rounded-s-full'>
 
                                     </img>
-                                    <div className='temperature mb-2'>{tempsNow}°C</div>
+                                    <div className='temperature mb-1'>{tempsNow}°C</div>
 
-                                    <div className='desc flex items-center mb-4'>
+                                    <div className='desc flex items-center mb-2'>
                                         <img src={`https://openweathermap.org/img/wn/${data?.weather[0].icon}@2x.png`} width={50}></img>
-                                        
+
                                         <span>{descWeather}</span>
                                     </div>
 
@@ -150,7 +156,6 @@ export default function HomePage() {
                                         </p>
                                     </div>
                                 </div>
-
 
                                 {/* card-weather-bottom */}
                                 <div className='card-weather-bottom ml-5'>
@@ -173,31 +178,26 @@ export default function HomePage() {
                                 </div>
                             </div>
                         </Col>
-                        <Col style={style} span={18}>
+                        <Col style={style} span={19}>
                             <div className='today-highlight'>
-                                <div className='flex '>
+                                <div className='flex items-center'>
                                     <h1 className='ml-3 pt-3 text-xs font-semibold '>Today's Highlight</h1>
                                     <Dropdown
+                                        className='dropdown-menu'
                                         menu={{ items }}
-                                        trigger={['click']}>
-                                        <a onClick={(e) => e.preventDefault()}>
-                                            <Space>
-                                                <Search
-                                                    placeholder="search country"
-                                                    onSearch={onSearch}
-                                                    style={{
-                                                        width: '200px',
-                                                        margin: '7px 0 0 20px'
-                                                    }} loading={isLoading} />
+                                        trigger={['click']}
+                                    >
+                                        <button className='dropdown-button text-xs mt-3 ml-10' onClick={(e) => e.preventDefault()}>
+                                            <Space>{data?.name}
+                                                <DownOutlined />
                                             </Space>
-                                        </a>
+                                        </button>
                                     </Dropdown>
                                 </div>
 
                                 <div className='flex'>
-
                                     {/* Wind */}
-                                    <div className='wind-status bg-card-today-highlight py-2 px-2'>
+                                    <div className='wind-status bg-card py-2 px-2'>
                                         <div className='wind-status-top'>
                                             <h1 className='tittle-today-highlight'>Wind Status</h1>
                                             <div className='chart'>
@@ -208,18 +208,18 @@ export default function HomePage() {
                                             <div className='wind-speeds text-lg'>
                                                 <div>
                                                     <span className='text-xs'>speed:
-                                                    </span> <span className='text-base'>1.5<span className='wind-speeds-param'>m/s
+                                                    </span> <span className='text-base'>{data?.wind.speed}<span className='wind-speeds-param'>m/s
                                                     </span></span>
                                                 </div>
                                                 <div>
                                                     <span className='text-xs'>Strongest Wind:
-                                                    </span> <span className='text-base'>7.90</span>
+                                                    </span> <span className='text-base'>{data?.wind.gust}</span>
                                                     <span className='wind-speeds-param'>Km/h
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <span className='text-xs'>Deg:
-                                                    </span> <span className='text-base'>205°</span>
+                                                    <span className='text-xs'>Wind Direction:
+                                                    </span> <span className='text-base'>{data?.wind.deg}°</span>
                                                 </div>
                                             </div>
 
@@ -227,7 +227,7 @@ export default function HomePage() {
                                     </div>
 
                                     {/* Suntime */}
-                                    <div className='suntime py-2 px-2 relative bg-card-today-highlight'>
+                                    <div className='suntime py-2 px-2 relative bg-card'>
                                         <h1 className=' tittle-today-highlight'>Sunrise & Sunset</h1>
                                         <div className='suntime-top flex items-center justify-center flex-col relative'>
                                             <div className='chart-sun-time w-full'>
@@ -254,19 +254,23 @@ export default function HomePage() {
 
                                     </div>
                                     {/* Other information */}
-                                    <div className='other-information bg-card-today-highlight py-2 px-2'>
-                                        <h1 className='tittle-today-highlight'>Other Information</h1>
+                                    <div className='other-information bg-card py-2 px-2'>
+                                        <h1 className='tittle-today-highlight'>
+                                            Other Information</h1>
                                         {/* Pressure */}
-                                        <div className='pressure'>
-                                            <h2 className='tittle-information'>Air Pressure: <span>{data?.main.pressure} hPa</span></h2>
+                                        <div className='pressure flex items-center'>
+                                            <Gauge width={50} />
+                                            <h2 className='tittle-information'>Atmospheric  Pressure: <span>{data?.main.pressure} hPa</span></h2>
 
                                         </div>
                                         {/* Humidity */}
-                                        <div className='humidity'>
+                                        <div className='humidity flex items-center'>
+                                            <Droplets width={50} />
                                             <h2 className='tittle-information'>Humidity: <span>{data?.main.humidity}%</span></h2>
                                         </div>
                                         {/* Visibility */}
-                                        <div className='humidity'>
+                                        <div className='humidity flex items-center'>
+                                            <EyeOff width={50} />
                                             <h2 className='tittle-information'>Visibility: <span>{data?.visibility}m</span></h2>
                                         </div>
                                     </div>
@@ -276,6 +280,67 @@ export default function HomePage() {
                         </Col>
                     </Row>
                 </div>
+                <div className='flex justify-between w-3/6'>
+                    <div className='flex'>
+                        <CalendarDays className='mr-2' /><h1>7 Days Forecast</h1>
+                    </div>
+                    <div className='flex'>
+                        <Map className='mr-2' /><h1>Weather Condition Map</h1>
+                    </div>
+                </div>
+                <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }} className='weather-bottom'>
+                    <Col className='col-forecast' span={5} style={{ padding: '0' }}>
+                        <div className='forecast'>
+                            <WeatherForecast dataForecast={dataForecast}/>
+
+                            {/* <div className="infor-forecast flex items-center justify-between">
+                                <div className='flex items-center'>
+                                    <img src={Sunny} width={55}></img>
+                                    <span className='temps-forecast text-lg'>+29°/<span className='temps-mini text-sm'>+18</span></span>
+                                </div>
+                                <span className='month-forecast text-xs'>25 July</span>
+                                <span className='day-forecast text-xs mr-3'>Thursday</span>
+                            </div>
+                            <div className="infor-forecast flex items-center justify-between">
+                                <div className='flex items-center'>
+                                    <img src={Sunny} width={55}></img>
+                                    <span className='temps-forecast text-lg'>+29°/<span className='temps-mini text-sm'>+18</span></span>
+                                </div>
+                                <span className='month-forecast text-xs'>25 July</span>
+                                <span className='day-forecast text-xs mr-3'>Thursday</span>
+                            </div>
+                            <div className="infor-forecast flex items-center justify-between">
+                                <div className='flex items-center'>
+                                    <img src={Sunny} width={55}></img>
+                                    <span className='temps-forecast text-lg'>+29°/<span className='temps-mini text-sm'>+18</span></span>
+                                </div>
+                                <span className='month-forecast text-xs'>25 July</span>
+                                <span className='day-forecast text-xs mr-3'>Thursday</span>
+                            </div>
+                            <div className="infor-forecast flex items-center justify-between">
+                                <div className='flex items-center'>
+                                    <img src={Sunny} width={55}></img>
+                                    <span className='temps-forecast text-lg'>+29°/<span className='temps-mini text-sm'>+18</span></span>
+                                </div>
+                                <span className='month-forecast text-xs'>25 July</span>
+                                <span className='day-forecast text-xs mr-3'>Thursday</span>
+                            </div>
+                            <div className="infor-forecast flex items-center justify-between">
+                                <div className='flex items-center'>
+                                    <img src={Sunny} width={55}></img>
+                                    <span className='temps-forecast text-lg'>+29°/<span className='temps-mini text-sm'>+18</span></span>
+                                </div>
+                                <span className='month-forecast text-xs'>25 July</span>
+                                <span className='day-forecast text-xs mr-3'>Thursday</span>
+                            </div> */}
+
+                        </div>
+                    </Col>
+                    <Col span={19} className='map mt-3'>
+                        <iframe src={`https://openweathermap.org/weathermap?basemap=map&cities=true&layer=temperature&lat=${data?.coord.lat}&lon=${data?.coord.lon}&zoom=10`}
+                            style={{ width: '100%', height: '300px' }}></iframe>
+                    </Col>
+                </Row>
             </div>
         </div>
     )

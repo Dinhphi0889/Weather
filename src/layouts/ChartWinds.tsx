@@ -29,7 +29,7 @@ export const ChartWinds = () => {
                 ]
             },
             options: {
-                // responsive: true,
+                responsive: true,
                 animation: {
                     duration: 2000,
                     loop:true,

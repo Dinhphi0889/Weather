@@ -1,5 +1,3 @@
-import { defaultConfig } from "antd/es/theme/context"
-
 const nameCountry = [
     "Afghanistan",
     "Albania",

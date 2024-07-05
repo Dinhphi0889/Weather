@@ -20,8 +20,8 @@ const customDoughnutPlugin: Plugin = {
         chart.data.datasets.forEach((dataset, i) => {
 
             const meta = chart.getDatasetMeta(i);
-            const elementCount = meta.data.length;
-            const midPointIndex = Math.floor(elementCount / 2);
+            // const elementCount = meta.data.length;
+            // const midPointIndex = Math.floor(elementCount / 2);
 
             if (meta.data.length > 1) {
                 const firstPoint = meta.data[0];
